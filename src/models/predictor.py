@@ -102,6 +102,7 @@ class Translator(object):
 
         preds, pred_score, gold_score, tgt_str, src =  translation_batch["predictions"],translation_batch["scores"],translation_batch["gold_score"],batch.tgt_str, batch.src
 
+        all_beam_preds = translation_batch["allbeams"] # [batch_size, beam_size] list of list
         translations = []
         for b in range(batch_size):
             pred_sents = self.vocab.convert_ids_to_tokens([int(n) for n in preds[b][0]])
@@ -114,7 +115,12 @@ class Translator(object):
             # src = self.spm.DecodeIds([int(t) for t in translation_batch['batch'].src[0][5] if int(t) != len(self.spm)])
             raw_src = [self.vocab.ids_to_tokens[int(t)] for t in src[b]][:500]
             raw_src = ' '.join(raw_src)
-            translation = (pred_sents, gold_sent, raw_src)
+            all_beam = []
+            for beam_id in range(self.beam_size):
+                pred_sents_beam = self.vocab.convert_ids_to_tokens([int(n) for n in all_beam_preds[b][beam_id][0]])
+                pred_sents_beam = ' '.join(pred_sents_beam).replace(' ##', '')
+                all_beam.append(pred_sents_beam)
+            translation = (pred_sents, gold_sent, raw_src, all_beam)
             # translation = (pred_sents[0], gold_sent)
             translations.append(translation)
 
@@ -127,13 +133,15 @@ class Translator(object):
         self.model.eval()
         gold_path = self.args.result_path + '.%d.gold' % step
         can_path = self.args.result_path + '.%d.candidate' % step
-        self.gold_out_file = codecs.open(gold_path, 'w', 'utf-8')
-        self.can_out_file = codecs.open(can_path, 'w', 'utf-8')
+        beam_path = self.args.result_path + '.%d.candidate.all' % step
+        # self.gold_out_file = codecs.open(gold_path, 'w', 'utf-8')
+        # self.can_out_file = codecs.open(can_path, 'w', 'utf-8')
 
         # raw_gold_path = self.args.result_path + '.%d.raw_gold' % step
         # raw_can_path = self.args.result_path + '.%d.raw_candidate' % step
         self.gold_out_file = codecs.open(gold_path, 'w', 'utf-8')
         self.can_out_file = codecs.open(can_path, 'w', 'utf-8')
+        self.beam_out_file = codecs.open(beam_path, 'w', 'utf-8')
 
         raw_src_path = self.args.result_path + '.%d.raw_src' % step
         self.src_out_file = codecs.open(raw_src_path, 'w', 'utf-8')
@@ -150,7 +158,7 @@ class Translator(object):
                 translations = self.from_batch(batch_data)
 
                 for trans in translations:
-                    pred, gold, src = trans
+                    pred, gold, src, all_beam = trans
                     pred_str = pred.replace('[unused0]', '').replace('[unused3]', '').replace('[PAD]', '').replace('[unused1]', '').replace(r' +', ' ').replace(' [unused2] ', '<q>').replace('[unused2]', '').strip()
                     gold_str = gold.strip()
                     if(self.args.recall_eval):
@@ -175,6 +183,8 @@ class Translator(object):
                     self.can_out_file.write(pred_str + '\n')
                     self.gold_out_file.write(gold_str + '\n')
                     self.src_out_file.write(src.strip() + '\n')
+                    for i in range(self.beam_size):
+                        self.beam_out_file.write(all_beam[i] + '\n')
                     ct += 1
                 self.can_out_file.flush()
                 self.gold_out_file.flush()
@@ -267,6 +277,7 @@ class Translator(object):
         results["scores"] = [[] for _ in range(batch_size)]  # noqa: F812
         results["gold_score"] = [0] * batch_size
         results["batch"] = batch
+        results["allbeams"] = [[[] for _ in range(beam_size)] for _ in range(batch_size)]
 
         for step in range(max_length):
             decoder_input = alive_seq[:, -1].view(1, -1)
@@ -357,6 +368,11 @@ class Translator(object):
 
                         results["scores"][b].append(score)
                         results["predictions"][b].append(pred)
+                        assert len(best_hyp) == beam_size
+                        for beam_id in range(beam_size):
+                            score_temp, pred_temp = best_hyp[beam_id]
+                            results["allbeams"][b][beam_id].append(pred_temp)
+
                 non_finished = end_condition.eq(0).nonzero().view(-1)
                 # If all sentences are translated, no need to go further.
                 if len(non_finished) == 0:
