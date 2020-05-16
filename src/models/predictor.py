@@ -349,9 +349,6 @@ class Translator(object):
             # End condition is top beam is finished.
             end_condition = is_finished[:, 0].eq(1)
             # Save finished hypotheses.
-            print(is_finished.shape)
-            print(end_condition.shape)
-            print('--')
             if is_finished.any():
                 predictions = alive_seq.view(-1, beam_size, alive_seq.size(-1))
                 for i in range(is_finished.size(0)):
@@ -365,7 +362,8 @@ class Translator(object):
                             topk_scores[i, j],
                             predictions[i, j, 1:]))
                     # If the batch reached the end, save the n_best hypotheses.
-                    if end_condition[i]:
+                    # if end_condition[i]:
+                    if is_finished[i].all():
                         best_hyp = sorted(
                             hypotheses[b], key=lambda x: x[0], reverse=True)
                         score, pred = best_hyp[0]
