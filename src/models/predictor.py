@@ -223,7 +223,7 @@ class Translator(object):
            Shouldn't need the original dataset.
         """
         with torch.no_grad():
-            return self._full_translate_batch(
+            return self._fast_translate_batch(
                 batch,
                 self.max_length,
                 min_length=self.min_length)
