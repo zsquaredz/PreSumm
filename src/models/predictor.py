@@ -102,7 +102,7 @@ class Translator(object):
 
         preds, pred_score, gold_score, tgt_str, src =  translation_batch["predictions"],translation_batch["scores"],translation_batch["gold_score"],batch.tgt_str, batch.src
 
-        all_beam_preds = translation_batch["allbeams"] # [batch_size, beam_size] list of list
+        # all_beam_preds = translation_batch["allbeams"] # [batch_size, beam_size] list of list
         translations = []
         for b in range(batch_size):
             pred_sents = self.vocab.convert_ids_to_tokens([int(n) for n in preds[b][0]])
@@ -117,7 +117,7 @@ class Translator(object):
             raw_src = ' '.join(raw_src)
             all_beam = []
             for beam_id in range(self.beam_size):
-                pred_sents_beam = self.vocab.convert_ids_to_tokens([int(n) for n in all_beam_preds[b][beam_id][0]])
+                pred_sents_beam = self.vocab.convert_ids_to_tokens([int(n) for n in preds[b][beam_id]])
                 pred_sents_beam = ' '.join(pred_sents_beam).replace(' ##', '')
                 all_beam.append(pred_sents_beam)
             translation = (pred_sents, gold_sent, raw_src, all_beam)
@@ -278,7 +278,7 @@ class Translator(object):
         results["scores"] = [[] for _ in range(batch_size)]  # noqa: F812
         results["gold_score"] = [0] * batch_size
         results["batch"] = batch
-        results["allbeams"] = [[[] for _ in range(beam_size)] for _ in range(batch_size)]
+        # results["allbeams"] = [[[] for _ in range(beam_size)] for _ in range(batch_size)]
 
         for step in range(max_length):
             decoder_input = alive_seq[:, -1].view(1, -1)
@@ -369,15 +369,17 @@ class Translator(object):
                     # if is_finished[i].all():
                         best_hyp = sorted(
                             hypotheses[b], key=lambda x: x[0], reverse=True)
-                        score, pred = best_hyp[0]
+                        # score, pred = best_hyp[0]
 
-                        results["scores"][b].append(score)
-                        results["predictions"][b].append(pred)
+                        # results["scores"][b].append(score)
+                        # results["predictions"][b].append(pred)
                         # print(len(best_hyp))
                         assert len(best_hyp) >= beam_size
                         for beam_id in range(beam_size):
                             score_temp, pred_temp = best_hyp[beam_id]
-                            results["allbeams"][b][beam_id].append(pred_temp)
+                            # results["allbeams"][b][beam_id].append(pred_temp)
+                            results["scores"][b].append(score_temp)
+                            results["predictions"][b].append(pred_temp)
 
                 non_finished = end_condition.eq(0).nonzero().view(-1)
                 # If all sentences are translated, no need to go further.
