@@ -278,19 +278,18 @@ class Translator(object):
         results["scores"] = [[] for _ in range(batch_size)]  # noqa: F812
         results["gold_score"] = [0] * batch_size
         results["batch"] = batch
-        # results["allbeams"] = [[[] for _ in range(beam_size)] for _ in range(batch_size)]
 
         for step in range(max_length):
             decoder_input = alive_seq[:, -1].view(1, -1)
 
             # Decoder forward.
-            decoder_input = decoder_input.transpose(0,1)
+            decoder_input = decoder_input.transpose(0, 1)
 
             dec_out, dec_states = self.model.decoder(decoder_input, src_features, dec_states,
                                                      step=step)
 
             # Generator forward.
-            log_probs = self.generator.forward(dec_out.transpose(0,1).squeeze(0))
+            log_probs = self.generator.forward(dec_out.transpose(0, 1).squeeze(0))
             vocab_size = log_probs.size(-1)
 
             if step < min_length:
@@ -305,17 +304,17 @@ class Translator(object):
             # Flatten probs into a list of possibilities.
             curr_scores = log_probs / length_penalty
 
-            if(self.args.block_trigram):
+            if (self.args.block_trigram):
                 cur_len = alive_seq.size(1)
-                if(cur_len>3):
+                if (cur_len > 3):
                     for i in range(alive_seq.size(0)):
                         fail = False
                         words = [int(w) for w in alive_seq[i]]
                         words = [self.vocab.ids_to_tokens[w] for w in words]
-                        words = ' '.join(words).replace(' ##','').split()
-                        if(len(words)<=3):
+                        words = ' '.join(words).replace(' ##', '').split()
+                        if (len(words) <= 3):
                             continue
-                        trigrams = [(words[i-1],words[i],words[i+1]) for i in range(1,len(words)-1)]
+                        trigrams = [(words[i - 1], words[i], words[i + 1]) for i in range(1, len(words) - 1)]
                         trigram = tuple(trigrams[-1])
                         if trigram in trigrams[:-1]:
                             fail = True
@@ -334,8 +333,8 @@ class Translator(object):
 
             # Map beam_index to batch_index in the flat representation.
             batch_index = (
-                    topk_beam_index
-                    + beam_offset[:topk_beam_index.size(0)].unsqueeze(1))
+                topk_beam_index
+                + beam_offset[:topk_beam_index.size(0)].unsqueeze(1))
             select_indices = batch_index.view(-1)
 
             # Append last prediction.
@@ -348,7 +347,6 @@ class Translator(object):
                 is_finished.fill_(1)
             # End condition is top beam is finished.
             end_condition = is_finished[:, 0].eq(1)
-            # end_condition = is_finished.eq(1).all(1)
             # Save finished hypotheses.
             if is_finished.any():
                 predictions = alive_seq.view(-1, beam_size, alive_seq.size(-1))
@@ -364,21 +362,12 @@ class Translator(object):
                             predictions[i, j, 1:]))
                     # If the batch reached the end, save the n_best hypotheses.
                     if end_condition[i]:
-                    # if is_finished[i].all():
                         best_hyp = sorted(
                             hypotheses[b], key=lambda x: x[0], reverse=True)
-                        score, pred = best_hyp[0]
-
-                        results["scores"][b].append(score)
-                        results["predictions"][b].append(pred)
-                        # print(len(best_hyp))
-                        assert len(best_hyp) >= beam_size
-                        for beam_id in range(beam_size):
-                            score_temp, pred_temp = best_hyp[beam_id]
-                            # results["allbeams"][b][beam_id].append(pred_temp)
-                            results["scores"][b].append(score_temp)
-                            results["predictions"][b].append(pred_temp)
-
+                        # score, pred = best_hyp[0]
+                        for score, pred in best_hyp:
+                            results["scores"][b].append(score)
+                            results["predictions"][b].append(pred)
                 non_finished = end_condition.eq(0).nonzero().view(-1)
                 # If all sentences are translated, no need to go further.
                 if len(non_finished) == 0:
