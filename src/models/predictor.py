@@ -362,7 +362,7 @@ class Translator(object):
                             topk_scores[i, j],
                             predictions[i, j, 1:]))
                     # If the batch reached the end, save the n_best hypotheses.
-                    if is_finished.eq(1).all(1):
+                    if is_finished.eq(1).all(1)[i]:
                         best_hyp = sorted(
                             hypotheses[b], key=lambda x: x[0], reverse=True)
                         # score, pred = best_hyp[0]
