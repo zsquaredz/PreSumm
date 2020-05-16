@@ -116,10 +116,11 @@ class Translator(object):
             raw_src = [self.vocab.ids_to_tokens[int(t)] for t in src[b]][:500]
             raw_src = ' '.join(raw_src)
             all_beam = []
-            for beam_id in range(self.beam_size):
+            for beam_id in range(len(preds[b])):
                 pred_sents_beam = self.vocab.convert_ids_to_tokens([int(n) for n in preds[b][beam_id]])
                 pred_sents_beam = ' '.join(pred_sents_beam).replace(' ##', '')
-                all_beam.append(pred_sents_beam)
+                if pred_sents_beam not in all_beam and len(all_beam) < self.beam_size:
+                    all_beam.append(pred_sents_beam)
             translation = (pred_sents, gold_sent, raw_src, all_beam)
             # translation = (pred_sents[0], gold_sent)
             translations.append(translation)
@@ -540,7 +541,7 @@ class Translator(object):
 
                     if end_condition[i]:
                         best_hyp = sorted(
-                            hypotheses[b][-self.beam_size:], key=lambda x: x[0], reverse=True)
+                            hypotheses[b], key=lambda x: x[0], reverse=True)
                         score, pred = best_hyp[0]
                         for score, pred in best_hyp:
                             results["scores"][b].append(score.detach())
