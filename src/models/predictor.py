@@ -353,8 +353,8 @@ class Translator(object):
                 predictions = alive_seq.view(-1, beam_size, alive_seq.size(-1))
                 for i in range(is_finished.size(0)):
                     b = batch_offset[i]
-                    # if end_condition[i]:
-                    #     is_finished[i].fill_(1)
+                    if end_condition[i]:
+                        is_finished[i].fill_(1)
                     finished_hyp = is_finished[i].nonzero().view(-1)
                     # Store finished hypotheses for this batch.
                     for j in finished_hyp:
@@ -362,7 +362,7 @@ class Translator(object):
                             topk_scores[i, j],
                             predictions[i, j, 1:]))
                     # If the batch reached the end, save the n_best hypotheses.
-                    if is_finished.eq(1).all(1)[i]:
+                    if end_condition[i]:
                         best_hyp = sorted(
                             hypotheses[b], key=lambda x: x[0], reverse=True)
                         # score, pred = best_hyp[0]
@@ -548,6 +548,7 @@ class Translator(object):
             src_features = src_features.index_select(0, select_indices)
             dec_states.map_batch_fn(
                 lambda state, dim: state.index_select(dim, select_indices))
+        print(results["predictions"])
         return results
 
 
