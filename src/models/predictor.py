@@ -540,7 +540,7 @@ class Translator(object):
 
                     if end_condition[i]:
                         best_hyp = sorted(
-                            hypotheses[b], key=lambda x: x[0], reverse=True)
+                            hypotheses[b][:-self.beam_size], key=lambda x: x[0], reverse=True)
                         score, pred = best_hyp[0]
                         for score, pred in best_hyp:
                             results["scores"][b].append(score.detach())
