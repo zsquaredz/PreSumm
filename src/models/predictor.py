@@ -542,7 +542,7 @@ class Translator(object):
                         best_hyp = sorted(
                             hypotheses[b], key=lambda x: x[0], reverse=True)
                         score, pred = best_hyp[0]
-                        for score, pred in best_hyp[-self.beam_size:]:
+                        for score, pred in best_hyp:
                             results["scores"][b].append(score.detach())
                             results["predictions"][b].append(pred.detach())
                 non_finished = end_condition.eq(0).nonzero().view(-1)
