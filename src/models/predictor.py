@@ -530,21 +530,17 @@ class Translator(object):
                         is_finished[i].fill_(1)
                     finished_hyp = is_finished[i].nonzero().view(-1)
                     # Store finished hypotheses for this batch.
-                    # for j in finished_hyp:
-                    #     hypotheses[b].append((
-                    #         topk_scores[i, j],
-                    #         predictions[i, j, 1:]))
-                    if(len(hypotheses[b])>(self.beam_size)):
+                    for j in finished_hyp:
+                        hypotheses[b].append((
+                            topk_scores[i, j],
+                            predictions[i, j, 1:]))
+                    if(len(hypotheses[b])>(self.beam_size * 3)):
                         end_condition[i] = torch.tensor(True,device=device)
                     # If the batch reached the end, save the n_best hypotheses.
 
                     if end_condition[i]:
-                        for j in finished_hyp:
-                            hypotheses[b].append((
-                                topk_scores[i, j],
-                                predictions[i, j, 1:]))
                         best_hyp = sorted(
-                            hypotheses[b], key=lambda x: x[0], reverse=True)
+                            hypotheses[b][-self.beam_size:], key=lambda x: x[0], reverse=True)
                         score, pred = best_hyp[0]
                         for score, pred in best_hyp:
                             results["scores"][b].append(score.detach())
