@@ -105,7 +105,6 @@ class Translator(object):
         all_beam_preds = translation_batch["allbeams"] # [batch_size, beam_size] list of list
         translations = []
         for b in range(batch_size):
-            print(preds)
             pred_sents = self.vocab.convert_ids_to_tokens([int(n) for n in preds[b][0]])
             pred_sents = ' '.join(pred_sents).replace(' ##','')
             gold_sent = ' '.join(tgt_str[b].split())
@@ -348,7 +347,7 @@ class Translator(object):
             if step + 1 == max_length:
                 is_finished.fill_(1)
             # End condition is top beam is finished.
-            end_condition = is_finished[:, 0].eq(1) & is_finished[:, 1].eq(1)
+            end_condition = is_finished[:, 0].eq(1) & is_finished[:, 1].eq(1) & is_finished[:, 2].eq(1) & is_finished[:, 2].eq(1) & is_finished[:, 4].eq(1)
             # Save finished hypotheses.
             if is_finished.any():
                 predictions = alive_seq.view(-1, beam_size, alive_seq.size(-1))
