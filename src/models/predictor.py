@@ -223,7 +223,7 @@ class Translator(object):
            Shouldn't need the original dataset.
         """
         with torch.no_grad():
-            return self._full_translate_batch(
+            return self._fast_translate_batch(
                 batch,
                 self.max_length,
                 min_length=self.min_length)
@@ -347,8 +347,8 @@ class Translator(object):
             if step + 1 == max_length:
                 is_finished.fill_(1)
             # End condition is top beam is finished.
-            # end_condition = is_finished[:, 0].eq(1) & is_finished[:, 1].eq(1) & is_finished[:, 2].eq(1)& is_finished[:, 3].eq(1)& is_finished[:, 4].eq(1)
-            end_condition = is_finished.eq(1).all(1)
+            end_condition = is_finished[:, 0].eq(1)
+            # end_condition = is_finished.eq(1).all(1)
             # Save finished hypotheses.
             if is_finished.any():
                 predictions = alive_seq.view(-1, beam_size, alive_seq.size(-1))
@@ -369,10 +369,10 @@ class Translator(object):
                     # if is_finished[i].all():
                         best_hyp = sorted(
                             hypotheses[b], key=lambda x: x[0], reverse=True)
-                        # score, pred = best_hyp[0]
+                        score, pred = best_hyp[0]
 
-                        # results["scores"][b].append(score)
-                        # results["predictions"][b].append(pred)
+                        results["scores"][b].append(score)
+                        results["predictions"][b].append(pred)
                         # print(len(best_hyp))
                         assert len(best_hyp) >= beam_size
                         for beam_id in range(beam_size):
