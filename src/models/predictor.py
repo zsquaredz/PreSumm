@@ -184,7 +184,8 @@ class Translator(object):
                     self.gold_out_file.write(gold_str + '\n')
                     self.src_out_file.write(src.strip() + '\n')
                     for i in range(self.beam_size):
-                        self.beam_out_file.write(all_beam[i] + '\n')
+                        beam_str = all_beam[i].replace('[unused0]', '').replace('[unused3]', '').replace('[PAD]', '').replace('[unused1]', '').replace(r' +', ' ').replace(' [unused2] ', '<q>').replace('[unused2]', '').strip()
+                        self.beam_out_file.write(beam_str + '\n')
                     ct += 1
                 self.can_out_file.flush()
                 self.gold_out_file.flush()
