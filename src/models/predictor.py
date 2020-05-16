@@ -116,7 +116,7 @@ class Translator(object):
             raw_src = [self.vocab.ids_to_tokens[int(t)] for t in src[b]][:500]
             raw_src = ' '.join(raw_src)
             all_beam = []
-            for beam_id in range(self.beam_size):
+            for beam_id in range(len(all_beam)):
                 pred_sents_beam = self.vocab.convert_ids_to_tokens([int(n) for n in preds[b][beam_id]])
                 pred_sents_beam = ' '.join(pred_sents_beam).replace(' ##', '')
                 all_beam.append(pred_sents_beam)
@@ -183,7 +183,7 @@ class Translator(object):
                     self.can_out_file.write(pred_str + '\n')
                     self.gold_out_file.write(gold_str + '\n')
                     self.src_out_file.write(src.strip() + '\n')
-                    for i in range(self.beam_size):
+                    for i in range(len(all_beam)):
                         beam_str = all_beam[i].replace('[unused0]', '').replace('[unused3]', '').replace('[PAD]', '').replace('[unused1]', '').replace(r' +', ' ').replace(' [unused2] ', '<q>').replace('[unused2]', '').strip()
                         self.beam_out_file.write(beam_str + '\n')
                     ct += 1
