@@ -105,6 +105,7 @@ class Translator(object):
         all_beam_preds = translation_batch["allbeams"] # [batch_size, beam_size] list of list
         translations = []
         for b in range(batch_size):
+            print(preds)
             pred_sents = self.vocab.convert_ids_to_tokens([int(n) for n in preds[b][0]])
             pred_sents = ' '.join(pred_sents).replace(' ##','')
             gold_sent = ' '.join(tgt_str[b].split())
