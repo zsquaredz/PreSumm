@@ -534,7 +534,7 @@ class Translator(object):
                     #     hypotheses[b].append((
                     #         topk_scores[i, j],
                     #         predictions[i, j, 1:]))
-                    if(len(hypotheses[b])>(self.beam_size * 3)):
+                    if(len(hypotheses[b])>(self.beam_size)):
                         end_condition[i] = torch.tensor(True,device=device)
                     # If the batch reached the end, save the n_best hypotheses.
 
