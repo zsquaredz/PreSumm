@@ -349,6 +349,7 @@ class Translator(object):
             # End condition is top beam is finished.
             end_condition = is_finished[:, 0].eq(1)
             # Save finished hypotheses.
+            print(is_finished.shape)
             if is_finished.any():
                 predictions = alive_seq.view(-1, beam_size, alive_seq.size(-1))
                 for i in range(is_finished.size(0)):
