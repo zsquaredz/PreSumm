@@ -223,7 +223,7 @@ class Translator(object):
            Shouldn't need the original dataset.
         """
         with torch.no_grad():
-            return self._fast_translate_batch(
+            return self._full_translate_batch(
                 batch,
                 self.max_length,
                 min_length=self.min_length)
@@ -522,7 +522,7 @@ class Translator(object):
                         hypotheses[b].append((
                             topk_scores[i, j],
                             predictions[i, j, 1:]))
-                    if(len(hypotheses[b])>(self.beam_size * 3)):
+                    if(len(hypotheses[b])>self.beam_size):
                         end_condition[i] = torch.tensor(True,device=device)
                     # If the batch reached the end, save the n_best hypotheses.
 
