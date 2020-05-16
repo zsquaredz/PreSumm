@@ -347,20 +347,23 @@ class Translator(object):
             if step + 1 == max_length:
                 is_finished.fill_(1)
             # End condition is top beam is finished.
-            end_condition = is_finished[:, 0].eq(1) & is_finished[:, 1].eq(1) & is_finished[:, 2].eq(1)& is_finished[:, 3].eq(1)& is_finished[:, 4].eq(1)
+            # end_condition = is_finished[:, 0].eq(1) & is_finished[:, 1].eq(1) & is_finished[:, 2].eq(1)& is_finished[:, 3].eq(1)& is_finished[:, 4].eq(1)
+            end_condition = is_finished.eq(1).all(1)
             # Save finished hypotheses.
             if is_finished.any():
                 predictions = alive_seq.view(-1, beam_size, alive_seq.size(-1))
                 for i in range(is_finished.size(0)):
                     b = batch_offset[i]
-                    # if end_condition[i]:
-                    #     is_finished[i].fill_(1)
+                    if end_condition[i]:
+                        is_finished[i].fill_(1)
                     finished_hyp = is_finished[i].nonzero().view(-1)
                     # Store finished hypotheses for this batch.
                     for j in finished_hyp:
                         hypotheses[b].append((
                             topk_scores[i, j],
                             predictions[i, j, 1:]))
+                    if (len(hypotheses[b]) > beam_size):
+                        end_condition[i] = torch.tensor(True, device=device)
                     # If the batch reached the end, save the n_best hypotheses.
                     if end_condition[i]:
                     # if is_finished[i].all():
