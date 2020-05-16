@@ -368,8 +368,8 @@ class Translator(object):
 
                         results["scores"][b].append(score)
                         results["predictions"][b].append(pred)
-                        print(len(best_hyp))
-                        assert len(best_hyp) == beam_size
+                        # print(len(best_hyp))
+                        assert len(best_hyp) >= beam_size
                         for beam_id in range(beam_size):
                             score_temp, pred_temp = best_hyp[beam_id]
                             results["allbeams"][b][beam_id].append(pred_temp)
