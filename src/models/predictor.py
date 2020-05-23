@@ -74,6 +74,7 @@ class Translator(object):
 
         self.tensorboard_writer = SummaryWriter(tensorboard_log_dir, comment="Unmt")
 
+
         if self.beam_trace:
             self.beam_accum = {
                 "predicted_ids": [],
@@ -243,6 +244,9 @@ class Translator(object):
         segs = batch.segs
         mask_src = batch.mask_src
 
+        top_beam_finished = torch.zeros([batch_size], dtype=torch.uint8)
+        top_beam_finished = top_beam_finished.bool()
+
         src_features = self.model.bert(src, segs, mask_src)
         dec_states = self.model.decoder.init_decoder_state(src, src_features, with_cache=True)
         device = src_features.device
@@ -346,11 +350,13 @@ class Translator(object):
             if step + 1 == max_length:
                 is_finished.fill_(1)
             # End condition is top beam is finished.
-            end_condition = is_finished[:, 0].eq(1)
+            # end_condition = is_finished[:, 0].eq(1)
             # end_condition = is_finished.eq(1).all(1)
+            top_beam_finished |= is_finished[:, 0].eq(1)
             # Save finished hypotheses.
             if is_finished.any():
                 predictions = alive_seq.view(-1, beam_size, alive_seq.size(-1))
+                non_finished_batch = []
                 for i in range(is_finished.size(0)):
                     b = batch_offset[i]
                     # if end_condition[i]:
@@ -362,14 +368,17 @@ class Translator(object):
                             topk_scores[i, j],
                             predictions[i, j, 1:]))
                     # If the batch reached the end, save the n_best hypotheses.
-                    if end_condition[i] and len(hypotheses[b]) >= 5:
+                    if top_beam_finished[i] and len(hypotheses[b]) >= 5:
                         best_hyp = sorted(
                             hypotheses[b], key=lambda x: x[0], reverse=True)
                         # score, pred = best_hyp[0]
                         for score, pred in best_hyp:
                             results["scores"][b].append(score)
                             results["predictions"][b].append(pred)
-                non_finished = end_condition.eq(0).nonzero().view(-1)
+                    else:
+                        non_finished_batch.append(i)
+                # non_finished = end_condition.eq(0).nonzero().view(-1)
+                non_finished = torch.tensor(non_finished_batch)
                 # If all sentences are translated, no need to go further.
                 if len(non_finished) == 0:
                     break
