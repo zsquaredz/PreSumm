@@ -353,8 +353,8 @@ class Translator(object):
             predictions = alive_seq.view(-1, beam_size, alive_seq.size(-1))
             for i in range(is_finished.size(0)):
                 b = batch_offset[i]
-                if end_condition[i]:
-                    is_finished[i].fill_(1)
+                # if end_condition[i]:
+                #     is_finished[i].fill_(1)
                 finished_hyp = is_finished[i].nonzero().view(-1)
                 # Store finished hypotheses for this batch.
                 for j in finished_hyp:
