@@ -352,9 +352,14 @@ class Translator(object):
             # End condition is top beam is finished.
             # end_condition = is_finished[:, 0].eq(1)
             # end_condition = is_finished.eq(1).all(1)
-            top_beam_finished |= is_finished[:, 0].eq(1)
+            # top_beam_finished |= is_finished[:, 0].eq(1)
             # Save finished hypotheses.
             if is_finished.any():
+                # Penalize beams that finished.
+                topk_log_probs.masked_fill_(is_finished, -1e10)
+                # is_finished = is_finished.to('cpu')
+                top_beam_finished |= is_finished[:, 0].eq(1)
+
                 predictions = alive_seq.view(-1, beam_size, alive_seq.size(-1))
                 non_finished_batch = []
                 for i in range(is_finished.size(0)):
@@ -368,7 +373,7 @@ class Translator(object):
                             topk_scores[i, j],
                             predictions[i, j, 1:]))
                     # If the batch reached the end, save the n_best hypotheses.
-                    if top_beam_finished[i] and len(hypotheses[b]) >= 5:
+                    if top_beam_finished[i] and len(hypotheses[b]) >= 4:
                         best_hyp = sorted(
                             hypotheses[b], key=lambda x: x[0], reverse=True)
                         # score, pred = best_hyp[0]
@@ -383,6 +388,8 @@ class Translator(object):
                 if len(non_finished) == 0:
                     break
                 # Remove finished batches for the next step.
+                top_beam_finished = top_beam_finished.index_select(
+                    0, non_finished)
                 topk_log_probs = topk_log_probs.index_select(0, non_finished)
                 batch_index = batch_index.index_select(0, non_finished)
                 batch_offset = batch_offset.index_select(0, non_finished)
