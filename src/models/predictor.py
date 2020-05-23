@@ -378,7 +378,7 @@ class Translator(object):
                     else:
                         non_finished_batch.append(i)
                 # non_finished = end_condition.eq(0).nonzero().view(-1)
-                non_finished = torch.tensor(non_finished_batch)
+                non_finished = torch.tensor(non_finished_batch, device=device)
                 # If all sentences are translated, no need to go further.
                 if len(non_finished) == 0:
                     break
