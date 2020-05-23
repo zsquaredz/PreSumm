@@ -244,11 +244,12 @@ class Translator(object):
         segs = batch.segs
         mask_src = batch.mask_src
 
-        top_beam_finished = torch.zeros([batch_size], dtype=torch.uint8)
 
         src_features = self.model.bert(src, segs, mask_src)
         dec_states = self.model.decoder.init_decoder_state(src, src_features, with_cache=True)
         device = src_features.device
+
+        top_beam_finished = torch.zeros([batch_size], dtype=torch.uint8, device=device)
 
         # Tile states and memory beam_size times.
         dec_states.map_batch_fn(
