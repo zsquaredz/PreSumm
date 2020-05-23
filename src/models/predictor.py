@@ -349,36 +349,37 @@ class Translator(object):
             end_condition = is_finished[:, 0].eq(1)
             # end_condition = is_finished.eq(1).all(1)
             # Save finished hypotheses.
-            if is_finished.any():
-                predictions = alive_seq.view(-1, beam_size, alive_seq.size(-1))
-                for i in range(is_finished.size(0)):
-                    b = batch_offset[i]
-                    if end_condition[i]:
-                        is_finished[i].fill_(1)
-                    finished_hyp = is_finished[i].nonzero().view(-1)
-                    # Store finished hypotheses for this batch.
-                    for j in finished_hyp:
-                        hypotheses[b].append((
-                            topk_scores[i, j],
-                            predictions[i, j, 1:]))
-                    # If the batch reached the end, save the n_best hypotheses.
-                    if end_condition[i]:
-                        best_hyp = sorted(
-                            hypotheses[b], key=lambda x: x[0], reverse=True)
-                        # score, pred = best_hyp[0]
-                        for score, pred in best_hyp:
-                            results["scores"][b].append(score)
-                            results["predictions"][b].append(pred)
-                non_finished = end_condition.eq(0).nonzero().view(-1)
-                # If all sentences are translated, no need to go further.
-                if len(non_finished) == 0:
-                    break
-                # Remove finished batches for the next step.
-                topk_log_probs = topk_log_probs.index_select(0, non_finished)
-                batch_index = batch_index.index_select(0, non_finished)
-                batch_offset = batch_offset.index_select(0, non_finished)
-                alive_seq = predictions.index_select(0, non_finished) \
-                    .view(-1, alive_seq.size(-1))
+            # if is_finished.any():
+            predictions = alive_seq.view(-1, beam_size, alive_seq.size(-1))
+            for i in range(is_finished.size(0)):
+                b = batch_offset[i]
+                if end_condition[i]:
+                    is_finished[i].fill_(1)
+                finished_hyp = is_finished[i].nonzero().view(-1)
+                # Store finished hypotheses for this batch.
+                for j in finished_hyp:
+                    hypotheses[b].append((
+                        topk_scores[i, j],
+                        predictions[i, j, 1:]))
+                # If the batch reached the end, save the n_best hypotheses.
+                if end_condition[i]:
+                    best_hyp = sorted(
+                        hypotheses[b], key=lambda x: x[0], reverse=True)
+                    # score, pred = best_hyp[0]
+                    for score, pred in best_hyp:
+                        results["scores"][b].append(score)
+                        results["predictions"][b].append(pred)
+            non_finished = end_condition.eq(0).nonzero().view(-1)
+            # If all sentences are translated, no need to go further.
+            if len(non_finished) == 0:
+                break
+            # Remove finished batches for the next step.
+            topk_log_probs = topk_log_probs.index_select(0, non_finished)
+            batch_index = batch_index.index_select(0, non_finished)
+            batch_offset = batch_offset.index_select(0, non_finished)
+            alive_seq = predictions.index_select(0, non_finished) \
+                .view(-1, alive_seq.size(-1))
+
             # Reorder states.
             select_indices = batch_index.view(-1)
             src_features = src_features.index_select(0, select_indices)
