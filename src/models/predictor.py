@@ -245,7 +245,6 @@ class Translator(object):
         mask_src = batch.mask_src
 
         top_beam_finished = torch.zeros([batch_size], dtype=torch.uint8)
-        top_beam_finished = top_beam_finished.bool()
 
         src_features = self.model.bert(src, segs, mask_src)
         dec_states = self.model.decoder.init_decoder_state(src, src_features, with_cache=True)
