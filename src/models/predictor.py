@@ -377,7 +377,7 @@ class Translator(object):
                         best_hyp = sorted(
                             hypotheses[b], key=lambda x: x[0], reverse=True)
                         # score, pred = best_hyp[0]
-                        for score, pred in best_hyp:
+                        for score, pred in best_hyp[:self.beam_size]:
                             results["scores"][b].append(score)
                             results["predictions"][b].append(pred)
                     else:
